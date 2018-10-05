@@ -13,6 +13,9 @@ const (
 	// WidgetTypeImage represents widget of type image
 	WidgetTypeImage = "imagefield"
 
+	// WidgetTypeLardwaz represents lardwaz module for content building
+	WidgetTypeLardwaz = "lardwaz"
+
 	// WidgetTypeNumber represents widget of type number
 	WidgetTypeNumber = "number"
 
@@ -371,6 +374,9 @@ type Entity struct {
 
 	// DefaultSort is a sort string used while generating List() method in CRUD
 	DefaultSort string `json:"default_sort"`
+
+	// ContentBuilder includes the Lardwaz module for content building
+	ContentBuilder bool `json:"content_builder"`
 }
 
 // Field describes a field contained in an entity

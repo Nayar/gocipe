@@ -15,6 +15,23 @@
                     Save
                     <v-icon right>save</v-icon>
                 </v-btn>
+
+                {{ if .Entity.ContentBuilder }}
+
+                <v-tabs
+                    slot="extension"
+                    v-model="tab"
+                    color="transparent"
+                    align-with-title
+                >
+                    <v-tabs-slider color="primary"></v-tabs-slider>
+                    <v-tab v-for="item in items" :key="item.id">
+                        {{ "{{ item.text }}" }}
+                    </v-tab>
+                </v-tabs>
+
+                {{ end }}
+                
             </v-toolbar>
             <!-- Nested Form Toolbar -->
             <v-toolbar class="primary listing-toolbar px-3" dense dark v-else>
@@ -27,129 +44,149 @@
                 </v-btn>
             </v-toolbar>
         </div>
-        <div v-if="loading" centered>
-            <v-progress-linear :indeterminate="true"></v-progress-linear>
-            <p class="text-xs-center">contacting server...</p>
-        </div>
 
-        <v-card v-else>
-            <v-card-text>
-                <v-form>
-                    <div class="gocipe-form-grid" v-if="entity">
-                    {{- $EntityName := .Entity.Name -}} 
-                    {{- range .Entity.Fields -}} 
-                        {{- if not .EditWidget.Hide }} 
-                        {{- if not (eq .EditWidget.Type "status") }} 
-                            <div class="gocipe-field-container">
-                                <component  :is="'EditWidget{{ucfirst .EditWidget.Type }}'"
-                                            :label="'{{ .Label }}'"
-                                            :hint="'{{ .EditWidget.Description }}'" 
-                                            :value="this.entity.get{{ucfirst .Property.Name}}()" 
-                                            @gocipe="(e) => this.entity.set{{ucfirst .Property.Name}}(e)" 
-                                            
-                                            {{- /* SELECTBOX */ -}}
-                                            {{- if eq .EditWidget.Type "select" }} 
-                                            :options='{{json .EditWidget.Options }}' 
-                                            {{- end -}}
-                                            
-                                            {{- /* IMAGEFIELD */ -}}
-                                            {{- if eq .EditWidget.Type "imagefield" }}
-                                            :field="'{{ .Property.Name}}'" 
-                                            :rpc="'upload{{ $EntityName }}'" 
-                                            :entityid="id"
-                                            {{- end -}}
-                                ></component>
-                            </div>
-                        {{- end }} 
-                        {{- end }} 
-                    {{- end -}}
+        {{ if .Entity.ContentBuilder }}
 
-                    {{- range .Entity.Relationships -}}
-                        {{- if not .EditWidget.Hide }}
-                        <template v-if="componentLoaded">
-                        {{- if eq .Type "one-many" }}
-                            <div class="data-table-responsive-wrapper">
-                                <component
-                                    :is="'{{plural .Entity }}List'"
-                                    :key="'{{plural .Entity }}_key'"
-                                    :filter_id="id" 
-                                    :filter_field="'{{lower $.Entity.Name}}_id'"
-                                    :rpc="'set{{$.Entity.Name }}id'"
-                                    :nested="true" 
-                                />
-                            </div>
-                        {{- else if or (eq .Type "many-many") (eq .Type "many-many-owner")}}
-                                <component  :is="'EditWidgetSelectRel'"
-                                    :label="'{{ .Name }}'"
-                                    :hint="'widget: select rel'" 
-                                    :value="this.entity.get{{ucfirst .Name}}List()" 
-                                    :rpc="'lookup{{plural .Entity}}'"
-                                    :multiple="true"
-                                    @gocipe="(e) => this.setRelated{{.Name}}(e)"
-                                    {{- /* SELECTREL */ -}}
-                                ></component>
-                        {{- else if eq .Type "many-one" }}
-                                <component  :is="'EditWidgetSelectRel'"
-                                    :label="'{{ .Name }}'"
-                                    :hint="'widget: select rel'" 
-                                    :value="this.entity.get{{ucfirst .Name}}()" 
-                                    :rpc="'lookup{{plural .Entity}}'"
-                                    :multiple="false"
-                                    @gocipe="(e) => this.entity.set{{ucfirst .Entity}}id(e)"
-                                    {{- /* SELECTREL */ -}}
-                                ></component>
-                        {{- end }}
-                        </template>
-                        {{- end }}
-                    {{- end }}
+        <v-tabs-items v-model="tab">
+            <v-tab-item key="info">
+                <v-card-text>
 
-                    {{- range .Entity.References -}}
-                        {{- if not .TypeField.EditWidget.Hide }}
-                        <template v-if="componentLoaded">
-                            <div class="gocipe-field-container">
-                                <component  :is="'EditWidgetSelect'"
-                                    :label="'{{ .TypeField.Label }}'"
-                                    :hint="'{{ .TypeField.EditWidget.Description }}'" 
-                                    :value="this.entity.get{{ucfirst .TypeField.Property.Name}}()" 
-                                    @gocipe="(e) => this.change{{ucfirst .TypeField.Property.Name}}(e)" 
-                                    :options='{{json .TypeField.EditWidget.Options }}'
-                                    :multiple="false"
-                                    {{- /* SELECTBOX */ -}}
-                                ></component>
-                            </div>
-                        </template>
-                        {{- end }}
-                        {{- if not .IDField.EditWidget.Hide }}
-                        <template v-if="componentLoaded">
-                            <div class="gocipe-field-container">
-                                <component  :is="'EditWidgetSelectRel'"
-                                    :label="'{{ .IDField.Label }}'"
-                                    :hint="'{{ .IDField.EditWidget.Description }}'" 
-                                    :value="this.entity.get{{ucfirst .IDField.Property.Name}}()" 
-                                    :rpc="lookup{{ucfirst .TypeField.Property.Name}}RPC"
-                                    @gocipe="(e) => this.entity.set{{ucfirst .IDField.Property.Name}}(e)"
-                                    :multiple="false"
-                                    {{- /* SELECTREL */ -}}
-                                ></component>
-                            </div>
-                        </template>
-                        {{- end }}
-                    {{- end }}
+        {{ end }}
 
-                    <component  :is="'EditWidgetStatus'"
-                        :label="'Status'"
-                        :value="this.entity.getStatus()" 
-                        @gocipe="(e) => this.entity.setStatus(e)" >
-                    </component>
-
+                    <div v-if="loading" centered>
+                        <v-progress-linear :indeterminate="true"></v-progress-linear>
+                        <p class="text-xs-center">contacting server...</p>
                     </div>
-                </v-form>
-            </v-card-text>
-        </v-card>
-        
+
+                    <v-card v-else>
+                        <v-card-text>
+                            <v-form>
+                                <div class="gocipe-form-grid" v-if="entity">
+                                {{- $EntityName := .Entity.Name -}} 
+                                {{- range .Entity.Fields -}} 
+                                    {{- if not .EditWidget.Hide }} 
+                                    {{- if not (eq .EditWidget.Type "status") }} 
+                                        <div class="gocipe-field-container">
+                                            <component  :is="'EditWidget{{ucfirst .EditWidget.Type }}'"
+                                                        :label="'{{ .Label }}'"
+                                                        :hint="'{{ .EditWidget.Description }}'" 
+                                                        :value="this.entity.get{{ucfirst .Property.Name}}()" 
+                                                        @gocipe="(e) => this.entity.set{{ucfirst .Property.Name}}(e)" 
+                                                        
+                                                        {{- /* SELECTBOX */ -}}
+                                                        {{- if eq .EditWidget.Type "select" }} 
+                                                        :options='{{json .EditWidget.Options }}' 
+                                                        {{- end -}}
+                                                        
+                                                        {{- /* IMAGEFIELD */ -}}
+                                                        {{- if eq .EditWidget.Type "imagefield" }}
+                                                        :field="'{{ .Property.Name}}'" 
+                                                        :rpc="'upload{{ $EntityName }}'" 
+                                                        :entityid="id"
+                                                        {{- end -}}
+                                            ></component>
+                                        </div>
+                                    {{- end }} 
+                                    {{- end }} 
+                                {{- end -}}
+
+                                {{- range .Entity.Relationships -}}
+                                    {{- if not .EditWidget.Hide }}
+                                    <template v-if="componentLoaded">
+                                    {{- if eq .Type "one-many" }}
+                                        <div class="data-table-responsive-wrapper">
+                                            <component
+                                                :is="'{{plural .Entity }}List'"
+                                                :key="'{{plural .Entity }}_key'"
+                                                :filter_id="id" 
+                                                :filter_field="'{{lower $.Entity.Name}}_id'"
+                                                :rpc="'set{{$.Entity.Name }}id'"
+                                                :nested="true" 
+                                            />
+                                        </div>
+                                    {{- else if or (eq .Type "many-many") (eq .Type "many-many-owner")}}
+                                            <component  :is="'EditWidgetSelectRel'"
+                                                :label="'{{ .Name }}'"
+                                                :hint="'widget: select rel'" 
+                                                :value="this.entity.get{{ucfirst .Name}}List()" 
+                                                :rpc="'lookup{{plural .Entity}}'"
+                                                :multiple="true"
+                                                @gocipe="(e) => this.setRelated{{.Name}}(e)"
+                                                {{- /* SELECTREL */ -}}
+                                            ></component>
+                                    {{- else if eq .Type "many-one" }}
+                                            <component  :is="'EditWidgetSelectRel'"
+                                                :label="'{{ .Name }}'"
+                                                :hint="'widget: select rel'" 
+                                                :value="this.entity.get{{ucfirst .Name}}()" 
+                                                :rpc="'lookup{{plural .Entity}}'"
+                                                :multiple="false"
+                                                @gocipe="(e) => this.entity.set{{ucfirst .Entity}}id(e)"
+                                                {{- /* SELECTREL */ -}}
+                                            ></component>
+                                    {{- end }}
+                                    </template>
+                                    {{- end }}
+                                {{- end }}
+
+                                {{- range .Entity.References -}}
+                                    {{- if not .TypeField.EditWidget.Hide }}
+                                    <template v-if="componentLoaded">
+                                        <div class="gocipe-field-container">
+                                            <component  :is="'EditWidgetSelect'"
+                                                :label="'{{ .TypeField.Label }}'"
+                                                :hint="'{{ .TypeField.EditWidget.Description }}'" 
+                                                :value="this.entity.get{{ucfirst .TypeField.Property.Name}}()" 
+                                                @gocipe="(e) => this.change{{ucfirst .TypeField.Property.Name}}(e)" 
+                                                :options='{{json .TypeField.EditWidget.Options }}'
+                                                :multiple="false"
+                                                {{- /* SELECTBOX */ -}}
+                                            ></component>
+                                        </div>
+                                    </template>
+                                    {{- end }}
+                                    {{- if not .IDField.EditWidget.Hide }}
+                                    <template v-if="componentLoaded">
+                                        <div class="gocipe-field-container">
+                                            <component  :is="'EditWidgetSelectRel'"
+                                                :label="'{{ .IDField.Label }}'"
+                                                :hint="'{{ .IDField.EditWidget.Description }}'" 
+                                                :value="this.entity.get{{ucfirst .IDField.Property.Name}}()" 
+                                                :rpc="lookup{{ucfirst .TypeField.Property.Name}}RPC"
+                                                @gocipe="(e) => this.entity.set{{ucfirst .IDField.Property.Name}}(e)"
+                                                :multiple="false"
+                                                {{- /* SELECTREL */ -}}
+                                            ></component>
+                                        </div>
+                                    </template>
+                                    {{- end }}
+                                {{- end }}
+
+                                <component  :is="'EditWidgetStatus'"
+                                    :label="'Status'"
+                                    :value="this.entity.getStatus()" 
+                                    @gocipe="(e) => this.entity.setStatus(e)" >
+                                </component>
+
+                                </div>
+                            </v-form>
+                        </v-card-text>
+                    </v-card>
+
+        {{ if .Entity.ContentBuilder }}
+
+                </v-card-text>
+            </v-tab-item>
+            <v-tab-item key="builder">
+                <v-card-text>
+                    <Lardwaz />
+                </v-card-text>
+            </v-tab-item>
+        </v-tabs-items>
+
+        {{ end }}
 
         
-         
         <v-toolbar class="transparent listing-toolbar blue-grey darken-4 px-3" dark flat ml-0  v-if="!nested">
             <v-spacer></v-spacer>
             <v-btn color="primary" @click="update">
@@ -191,6 +228,10 @@ import { Update{{ .Entity.Name}}Request } from "@/services/service_admin_pb";
 import { {{.Entity}} } from "@/services/models_pb"
 {{end}}{{end}}
 
+{{ if .Entity.ContentBuilder }}
+import Lardwaz from '@/modules/lardwaz/views/Lardwaz'
+{{ end }}
+
 let cli = new AdminClient("/api");
 export default {
   data() {
@@ -204,6 +245,8 @@ export default {
       loading: false,
       id: null,
       componentLoaded: false,
+      tab: null,
+      items: [{ id: 'info', text: 'Information'}, { id: 'builder', text: 'Content Builder'}]
       {{ range .Entity.References -}}
       lookup{{ucfirst .TypeField.Property.Name}}RPC: null,
       {{- end }}
@@ -224,6 +267,9 @@ export default {
   */}}
 
   components: {
+      {{ if .Entity.ContentBuilder }}
+        Lardwaz
+      {{ end }}
   },
   props: ["filter_id", "nested", "visible"],
   mounted() {

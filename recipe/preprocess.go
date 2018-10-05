@@ -177,6 +177,25 @@ func Preprocess(recipe *util.Recipe) (map[string]util.Entity, error) {
 	}
 
 	for _, entity := range entities {
+
+		//// Lardwaz
+
+		if entity.ContentBuilder {
+			entity.Fields = append(entity.Fields, util.Field{
+				Label:    "Lardwaz",
+				Property: util.FieldProperty{Name: "Content", Type: "string"},
+				Schema:   util.FieldSchema{Field: "content", Type: "TEXT"},
+				EditWidget: util.EditWidgetOpts{
+					Hide: true,
+				},
+				ListWidget: util.ListWidgetOpts{
+					Hide: true,
+				},
+			})
+		}
+
+		//// Lardwaz
+
 		for r := range entity.Relationships {
 			var isMany bool
 			rel := &entities[entity.Name].Relationships[r]
