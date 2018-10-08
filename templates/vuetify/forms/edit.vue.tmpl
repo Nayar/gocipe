@@ -29,15 +29,17 @@
 
                 {{ if .Entity.ContentBuilder }}
                 <template v-if="tab === 1">
-                    <v-btn flat icon :color="getViewport === 'mobile' ? 'primary' : ''" class="responsive responsive-mobile" @click="changeViewport('mobile')">
-                        <v-icon dark>phone_iphone</v-icon>
-                    </v-btn>
-                    <v-btn flat icon :color="getViewport === 'tablet' ? 'primary' : ''" class="responsive responsive-tablet" @click="changeViewport('tablet')">
-                        <v-icon dark>tablet_mac</v-icon>
-                    </v-btn>
-                    <v-btn flat icon :color="getViewport === 'desktop' ? 'primary' : ''" class="responsive responsive-desktop" @click="changeViewport('desktop')">
-                        <v-icon dark>desktop_mac</v-icon>
-                    </v-btn>
+                    <v-btn-toggle flat class="transparent" v-model="viewport">
+                        <v-btn flat small icon :color="getViewport === 'mobile' ? 'primary' : ''" @click="changeViewport('mobile')">
+                            <v-icon small dark>phone_iphone</v-icon>
+                        </v-btn>
+                        <v-btn flat small icon :color="getViewport === 'tablet' ? 'primary' : ''" @click="changeViewport('tablet')">
+                            <v-icon small dark>tablet_mac</v-icon>
+                        </v-btn>
+                        <v-btn flat small icon :color="getViewport === 'desktop' ? 'primary' : ''" @click="changeViewport('desktop')">
+                            <v-icon small dark>desktop_mac</v-icon>
+                        </v-btn>
+                    </v-btn-toggle>
                 </template>
                 {{ end }}
                 
@@ -258,8 +260,11 @@ export default {
       loading: false,
       id: null,
       componentLoaded: false,
+      {{ if .Entity.ContentBuilder }}
       tab: null,
-      items: [{ id: 'info', text: 'Information'}, { id: 'builder', text: 'Content Builder'}]
+      items: [{ id: 'info', text: 'Information'}, { id: 'builder', text: 'Content Builder'}],
+      viewport: null,
+      {{ end }}
       {{ range .Entity.References -}}
       lookup{{ucfirst .TypeField.Property.Name}}RPC: null,
       {{- end }}
@@ -352,6 +357,8 @@ export default {
                     if (this.entity.getContent() && this.entity.getContent().length > 0) {
                         this.$store.dispatch('lardwaz/setBlocks', { data: JSON.parse(this.entity.getContent()) })
                     }
+
+                    this.viewport = this.getViewport
                     {{ end }}
                 });
             },
