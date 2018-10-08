@@ -28,19 +28,17 @@
                 <v-spacer></v-spacer>
 
                 {{ if .Entity.ContentBuilder }}
-                <template v-if="tab === 1">
-                    <v-btn-toggle flat class="transparent" v-model="viewport">
-                        <v-btn flat small icon :color="getViewport === 'mobile' ? 'primary' : ''" @click="changeViewport('mobile')">
-                            <v-icon small dark>phone_iphone</v-icon>
-                        </v-btn>
-                        <v-btn flat small icon :color="getViewport === 'tablet' ? 'primary' : ''" @click="changeViewport('tablet')">
-                            <v-icon small dark>tablet_mac</v-icon>
-                        </v-btn>
-                        <v-btn flat small icon :color="getViewport === 'desktop' ? 'primary' : ''" @click="changeViewport('desktop')">
-                            <v-icon small dark>desktop_mac</v-icon>
-                        </v-btn>
-                    </v-btn-toggle>
-                </template>
+                <v-btn-toggle :disabled="tab === 0" flat class="transparent" v-model="viewport">
+                    <v-btn :disabled="tab === 0" flat small icon :color="getViewport === 'mobile' ? 'primary' : ''" @click="changeViewport('mobile')">
+                        <v-icon small dark>phone_iphone</v-icon>
+                    </v-btn>
+                    <v-btn :disabled="tab === 0" flat small icon :color="getViewport === 'tablet' ? 'primary' : ''" @click="changeViewport('tablet')">
+                        <v-icon small dark>tablet_mac</v-icon>
+                    </v-btn>
+                    <v-btn :disabled="tab === 0" flat small icon :color="getViewport === 'desktop' ? 'primary' : ''" @click="changeViewport('desktop')">
+                        <v-icon small dark>desktop_mac</v-icon>
+                    </v-btn>
+                </v-btn-toggle>
                 {{ end }}
                 
                 <v-btn color="primary"  @click="update">
