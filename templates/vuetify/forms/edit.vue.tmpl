@@ -6,31 +6,45 @@
                 <v-btn icon :to="{name: '{{- plural (lower .Entity.Name) -}}_list'}">
                     <v-icon>arrow_back</v-icon>
                 </v-btn>
-
                 <v-toolbar-title>Edit {{.Entity.Name}} </v-toolbar-title>
 
                 <v-spacer></v-spacer>
-                
-                <v-btn color="primary"  @click="update">
-                    Save
-                    <v-icon right>save</v-icon>
-                </v-btn>
 
                 {{ if .Entity.ContentBuilder }}
-
                 <v-tabs
-                    slot="extension"
+                    centered
                     v-model="tab"
                     color="transparent"
                     align-with-title
+                    :grow="false"
                 >
                     <v-tabs-slider color="primary"></v-tabs-slider>
                     <v-tab v-for="item in items" :key="item.id">
                         {{ "{{ item.text }}" }}
                     </v-tab>
                 </v-tabs>
-
                 {{ end }}
+
+                <v-spacer></v-spacer>
+
+                {{ if .Entity.ContentBuilder }}
+                <template v-if="tab === 1">
+                    <v-btn flat icon :color="getViewport === 'mobile' ? 'primary' : ''" class="responsive responsive-mobile" @click="changeViewport('mobile')">
+                        <v-icon dark>phone_iphone</v-icon>
+                    </v-btn>
+                    <v-btn flat icon :color="getViewport === 'tablet' ? 'primary' : ''" class="responsive responsive-tablet" @click="changeViewport('tablet')">
+                        <v-icon dark>tablet_mac</v-icon>
+                    </v-btn>
+                    <v-btn flat icon :color="getViewport === 'desktop' ? 'primary' : ''" class="responsive responsive-desktop" @click="changeViewport('desktop')">
+                        <v-icon dark>desktop_mac</v-icon>
+                    </v-btn>
+                </template>
+                {{ end }}
+                
+                <v-btn color="primary"  @click="update">
+                    Save
+                    <v-icon right>save</v-icon>
+                </v-btn>
                 
             </v-toolbar>
             <!-- Nested Form Toolbar -->
@@ -178,9 +192,7 @@
                 </v-card-text>
             </v-tab-item>
             <v-tab-item key="builder">
-                <v-card-text>
-                    <Lardwaz />
-                </v-card-text>
+                <Lardwaz :information="getInformation()"/>
             </v-tab-item>
         </v-tabs-items>
 
@@ -223,6 +235,7 @@
 import { AdminClient } from "@/services/service_admin_pb_service";
 import { GetRequest } from "@/services/service_admin_pb";
 import { Update{{ .Entity.Name}}Request } from "@/services/service_admin_pb";
+import { mapGetters } from 'vuex'
 
 {{range .Entity.Relationships -}}{{- if or (eq .Type "many-many") (eq .Type "many-many-owner") }}
 import { {{.Entity}} } from "@/services/models_pb"
@@ -266,121 +279,156 @@ export default {
     },
   */}}
 
-  components: {
-      {{ if .Entity.ContentBuilder }}
+    components: {
+        {{ if .Entity.ContentBuilder }}
         Lardwaz
-      {{ end }}
-  },
-  props: ["filter_id", "nested", "visible"],
-  mounted() {
-    this.request()
-    
-  },
-  methods: {
-        {{- range .Entity.Relationships -}}
-        {{- if or (eq .Type "many-many") (eq .Type "many-many-owner") }}
-        setRelated{{.Name}}: function(values) {
-            this.entity.set{{ucfirst (plural .Entity)}}List(
-                values.map((value) => { 
-                    let related = new {{.Entity}}();
-                    related.setId(value);
-                    return related; 
-                })
-            );
-        },
-        {{- end -}}
-        {{- end }}
-        {{ range .Entity.References -}}
-        change{{ucfirst .TypeField.Property.Name}}: function(e){
-            this.entity.setEntitytype(e);
-            this.lookup{{ucfirst .TypeField.Property.Name}}RPC = 'lookup'+this.entity.get{{ucfirst .TypeField.Property.Name}}();
-        },
-        {{- end }}
-        log: function(e) {
-            console.log(e)
-        },
-        request: function() {
-            if (this.filter_id) {
-                this.id = this.filter_id
-            } else {
-                this.id = this.$route.params.id;
-            }
-            let req = new GetRequest();
-            req.setId(this.id);
-
-            this.loading = true;
-
-            cli.get{{ .Entity.Name}}(req, (err, resp) => {
-                if (err) {
-                    console.log(err);
-                    this.snackbarShow(err.message, "error");
-                    return;
-                }
-                this.loading = false;
-                this.entity = resp.get{{ucfirst .Entity.Name}}();
-                this.componentLoaded = true;
-
-                {{ range .Entity.References -}}
+        {{ end }}
+    },
+    props: ["filter_id", "nested", "visible"],
+    mounted() {
+        this.request()
+        
+    },
+    computed: {
+        {{ if .Entity.ContentBuilder }}
+        ...mapGetters({
+            getLardwaz: 'lardwaz/getBlocks',
+            getViewport: 'lardwaz/getViewport'
+        })
+        {{ end }}
+    },
+    methods: {
+            {{- range .Entity.Relationships -}}
+            {{- if or (eq .Type "many-many") (eq .Type "many-many-owner") }}
+            setRelated{{.Name}}: function(values) {
+                this.entity.set{{ucfirst (plural .Entity)}}List(
+                    values.map((value) => { 
+                        let related = new {{.Entity}}();
+                        related.setId(value);
+                        return related; 
+                    })
+                );
+            },
+            {{- end -}}
+            {{- end }}
+            {{ range .Entity.References -}}
+            change{{ucfirst .TypeField.Property.Name}}: function(e){
+                this.entity.setEntitytype(e);
                 this.lookup{{ucfirst .TypeField.Property.Name}}RPC = 'lookup'+this.entity.get{{ucfirst .TypeField.Property.Name}}();
-                {{- end }}
-            });
-        },
-        update: function() {
-    
-            let req = new Update{{.Entity.Name}}Request();
-            req.set{{ ucfirst .Entity.Name}}(this.entity);
-            // this.loading = true;
-
-            this.snackbarShow('{{ucfirst .Entity.Name}} Saved');
-            /* this.debug(); */
-
-            cli.update{{.Entity.Name}}(req, (err, resp) => {
-                if (err) {
-                    console.log(err);
-                    this.snackbarShow(err.message, "error");
-                    return;
+            },
+            {{- end }}
+            log: function(e) {
+                console.log(e)
+            },
+            request: function() {
+                if (this.filter_id) {
+                    this.id = this.filter_id
+                } else {
+                    this.id = this.$route.params.id;
                 }
+                let req = new GetRequest();
+                req.setId(this.id);
 
-                // this.loading = false;
-                if (this.nested) {
-                    this.$emit("closeform", true);
+                this.loading = true;
+
+                cli.get{{ .Entity.Name}}(req, (err, resp) => {
+                    if (err) {
+                        console.log(err);
+                        this.snackbarShow(err.message, "error");
+                        return;
+                    }
+                    this.loading = false;
+                    this.entity = resp.get{{ucfirst .Entity.Name}}();
+                    this.componentLoaded = true;
+
+                    {{ range .Entity.References -}}
+                    this.lookup{{ucfirst .TypeField.Property.Name}}RPC = 'lookup'+this.entity.get{{ucfirst .TypeField.Property.Name}}();
+                    {{- end }}
+
+
+                    {{ if .Entity.ContentBuilder }}
+                    // Set Lardwaz content only when there is data
+                    this.$store.dispatch('lardwaz/setBlocks', { data: [] })
+                    if (this.entity.getContent() && this.entity.getContent().length > 0) {
+                        this.$store.dispatch('lardwaz/setBlocks', { data: JSON.parse(this.entity.getContent()) })
+                    }
+                    {{ end }}
+                });
+            },
+            update: function() {
+        
+                let req = new Update{{.Entity.Name}}Request();
+
+                {{ if .Entity.ContentBuilder }}
+                // Save Lardwaz content only if there are blocks
+                if (this.getLardwaz.length) {
+                    this.entity.setContent(JSON.stringify(this.getLardwaz));
                 }
-            });
-        },
-        emitSaveAndCloseForm: function() {
-            /* console.log("emitting close form to parent"); */
-            this.update();
-        },
-        emitCloseForm: function() {
-            /* console.log("emitting close form to parent"); */
-            this.$emit("closeform", true);
-        },
-        debug: function() {
-            {{- range .Entity.Fields }}
-            console.log("{{.Property.Name}}", this.entity.get{{ ucfirst .Property.Name }}());
-            {{- end}}
-            {{- range .Entity.References }}
-            console.log("{{.IDField.Property.Name}}", this.entity.get{{ ucfirst .IDField.Property.Name }}());
-            console.log("{{.TypeField.Property.Name}}", this.entity.get{{ ucfirst .TypeField.Property.Name }}());
-            {{- end}}
-        },
-        snackbarShow: function(text, color) {
-            this.snackbar.show = true;
-            this.snackbar.color = color || 'info';
-            this.snackbar.text = text || 'something happened';
-        },
-        snackbarHide: function() {
-            this.snackbar.show = false
-        }
-  }
-  /* watch: {
-    visible: function(val) {
-      if (val) {
-        console.log("watching");
-        this.request();
-      }
+                {{ end }}
+
+                req.set{{ ucfirst .Entity.Name}}(this.entity);
+                // this.loading = true;
+
+                this.snackbarShow('{{ucfirst .Entity.Name}} Saved');
+                /* this.debug(); */
+
+                cli.update{{.Entity.Name}}(req, (err, resp) => {
+                    if (err) {
+                        console.log(err);
+                        this.snackbarShow(err.message, "error");
+                        return;
+                    }
+
+                    // this.loading = false;
+                    if (this.nested) {
+                        this.$emit("closeform", true);
+                    }
+                });
+            },
+            emitSaveAndCloseForm: function() {
+                /* console.log("emitting close form to parent"); */
+                this.update();
+            },
+            emitCloseForm: function() {
+                /* console.log("emitting close form to parent"); */
+                this.$emit("closeform", true);
+            },
+            debug: function() {
+                {{- range .Entity.Fields }}
+                console.log("{{.Property.Name}}", this.entity.get{{ ucfirst .Property.Name }}());
+                {{- end}}
+                {{- range .Entity.References }}
+                console.log("{{.IDField.Property.Name}}", this.entity.get{{ ucfirst .IDField.Property.Name }}());
+                console.log("{{.TypeField.Property.Name}}", this.entity.get{{ ucfirst .TypeField.Property.Name }}());
+                {{- end}}
+            },
+            snackbarShow: function(text, color) {
+                this.snackbar.show = true;
+                this.snackbar.color = color || 'info';
+                this.snackbar.text = text || 'something happened';
+            },
+            snackbarHide: function() {
+                this.snackbar.show = false
+            },
+            {{ if .Entity.ContentBuilder }}
+            getInformation: function () {
+                let information = {};
+                information.title = this.entity && this.entity.getTitle() && this.entity.getTitle().length > 0 ? this.entity.getTitle() : null;
+                return information;
+            },
+            changeViewport: function (value) {
+              this.$store.dispatch('lardwaz/setViewport', { data: value })
+            },
+            {{ end }}
     }
-  } */
+    /* watch: {
+        visible: function(val) {
+        if (val) {
+            console.log("watching");
+            this.request();
+        }
+        }
+    } */
 };
 </script>
 
