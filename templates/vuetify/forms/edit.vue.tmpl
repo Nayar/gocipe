@@ -352,7 +352,7 @@ export default {
                     {{ if .Entity.ContentBuilder }}
                     // Set Lardwaz content only when there is data
                     this.$store.dispatch('lardwaz/setBlocks', { data: [] })
-                    if (this.entity.getContent() && this.entity.getContent().length > 0) {
+                    if (this.entity.getContent() && (this.entity.getContent() !== "{}" && this.entity.getContent().length > 0)) {
                         this.$store.dispatch('lardwaz/setBlocks', { data: JSON.parse(this.entity.getContent()) })
                     }
 
